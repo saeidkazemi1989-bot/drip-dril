@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>سازنده گزارش بهبود فرآیند</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div>
+    <h1>سازنده گزارش بهبود فرآیند</h1>
+    <div class="sub">برای بردهای الکترونیکی خودرو — اطلاعات را بخش‌بخش وارد کنید؛ هر وقت خواستید خروجی کامل بگیرید</div>
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+    <button class="btn small" id="btnGenerateTop" title="با اطلاعات فعلی همین حالا فایل PPTX بساز">⬇ خروجی با اطلاعات فعلی</button>
+    <button class="btn small secondary" id="btnSaveDraft">ذخیره پیش‌نویس</button>
+    <select id="draftSelect" style="width:auto;padding:6px" title="بارگذاری پیش‌نویس ذخیره‌شده"><option value="">— پیش‌نویس‌ها —</option></select>
+    <button class="btn small secondary" id="btnLoadDraft">بارگذاری</button>
+    <button class="btn small secondary" id="btnDelDraft">حذف</button>
+    <button class="btn small secondary" id="btnDemo" title="فقط یک مثال برای دیدن ساختار است — برای محصول/فرآیند خودتان اطلاعات وارد کنید">داده نمونه (فقط مثال ساختار)</button>
+    <button class="btn small secondary" id="btnExportJson">خروجی JSON</button>
+    <button class="btn small secondary" id="btnImportJson">ورود JSON</button>
+    <input type="file" id="fileJson" accept=".json" style="display:none">
+  </div>
+</header>
+<div style="background:#fff8e1;border-bottom:1px solid var(--yellow);padding:8px 20px;font-size:12px;line-height:1.8">
+  <b>کار تدریجی:</b> لازم نیست همه بخش‌ها را یکجا پر کنید. هر بخش را که وارد کردید ذخیره می‌شود (خودکار روی سرور + مرورگر) و در هر زمان می‌توانید با دکمه «خروجی با اطلاعات فعلی» فایل کامل بگیرید — بخش‌های پرنشده با جای‌خالی مشخص می‌شوند تا بعداً تکمیل‌شان کنید. نقطه سبز کنار هر گام یعنی آن بخش کامل شده است.
+</div>
+<div class="progress"><div id="progBar"></div></div>
+
+<div class="layout">
+<nav class="side" id="sideNav"></nav>
+<main id="main">
+
+<!-- ============ گام ۰: اطلاعات پایه ============ -->
+<section class="step active" data-step="0">
+  <div class="card">
+    <h2>اطلاعات پایه گزارش</h2>
+    <div class="hint">این اطلاعات روی جلد و سربرگ همه اسلایدها قرار می‌گیرد. همه فیلدها بعداً در پاورپوینت قابل ویرایش هستند.</div>
+    <label>عنوان گزارش (روی جلد)</label>
+    <input type="text" id="r_title" placeholder="مثال: بررسی وضعیت کیفی محصول ... در فرآیند ...">
+    <div class="row">
+      <div><label>زیرعنوان</label><input type="text" id="r_subtitle" placeholder="مثال: نام فرآیند / دستگاه (به انگلیسی یا فارسی)"></div>
+      <div><label>نام شرکت / واحد</label><input type="text" id="r_company" placeholder="مثال: نام شرکت — واحد کنترل کیفیت"></div>
+    </div>
+    <div class="row">
+      <div><label>تاریخ گزارش</label><input type="text" id="r_date" placeholder="مثال: 1403/07/12"></div>
+      <div><label>متن فوتر اسلایدها</label><input type="text" id="r_footer" placeholder="مثال: Quality Report - نام محصول"></div>
+      <div><label>نام فایل خروجی</label><input type="text" id="r_filename" placeholder="مثال: report-nbcm"></div>
+    </div>
+    <label>اعضای تیم (هر ردیف: نام | سمت)</label>
+    <table class="grid" id="tblTeam"><thead><tr><th>نام و نام خانوادگی</th><th>سمت / نقش</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblTeam">+ افزودن عضو</button>
+    <label>یادداشت تیم (اختیاری)</label>
+    <textarea id="r_team_note"></textarea>
+  </div>
+</section>
+
+<!-- ============ گام ۱: معرفی محصول ============ -->
+<section class="step" data-step="1">
+  <div class="card">
+    <h2>معرفی محصول</h2>
+    <div class="hint">توضیح محصول چیست و چه کاری انجام می‌دهد + عکس محصول را بارگذاری کنید.</div>
+    <label>متن معرفی محصول</label>
+    <textarea id="r_product_desc" style="min-height:140px"></textarea>
+    <label>عکس محصول</label>
+    <input type="file" id="ph_product" accept="image/*">
+    <div class="photo-grid" id="prev_product"></div>
+  </div>
+</section>
+
+<!-- ============ گام ۲: معرفی دستگاه ============ -->
+<section class="step" data-step="2">
+  <div class="card">
+    <h2>معرفی دستگاه / فرآیند</h2>
+    <div class="hint">دستگاه چیست، چه کاربردی دارد، کی راه‌اندازی شده + عکس دستگاه.</div>
+    <label>نام دستگاه / فرآیند</label>
+    <input type="text" id="r_machine_name" placeholder="مثال: دستگاه / خط مونتاژ / فرآیند موردنظر">
+    <label>توضیح دستگاه و فرآیند</label>
+    <textarea id="r_machine_desc" style="min-height:130px"></textarea>
+    <label>تاریخ راه‌اندازی (اختیاری)</label>
+    <input type="text" id="r_machine_launch" placeholder="مثال: تجهیز جدید در تاریخ ... در خط تولید راه‌اندازی گردیده است.">
+    <label>عکس دستگاه (اصلی)</label>
+    <input type="file" id="ph_machine" accept="image/*">
+    <div class="photo-grid" id="prev_machine"></div>
+    <label>عکس دوم دستگاه (اختیاری — اسلاید تمام‌صفحه)</label>
+    <input type="file" id="ph_machine2" accept="image/*">
+    <div class="photo-grid" id="prev_machine2"></div>
+  </div>
+</section>
+
+<!-- ============ گام ۳: معرفی قطعه ============ -->
+<section class="step" data-step="3">
+  <div class="card">
+    <h2>معرفی قطعه — سازنده</h2>
+    <div class="hint">جدول قطعات/محصولات تحت پوشش این فرآیند.</div>
+    <table class="grid" id="tblParts"><thead><tr><th>شرح</th><th>شماره فنی</th><th>کد سازنده</th><th>نمره عملکرد</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblParts">+ افزودن ردیف</button>
+  </div>
+</section>
+
+<!-- ============ گام ۴: فاز ۱ ============ -->
+<section class="step" data-step="4">
+  <div class="card">
+    <h2>فاز ۱ — انتخاب موضوع</h2>
+    <div class="hint">ایرادات رویت‌شده مربوط به شکست‌های خارجی و داخلی را یکی‌یکی وارد کنید (هر خط یک ایراد).</div>
+    <label>شرح ایرادات (هر خط یک مورد)</label>
+    <textarea id="r_phase1" style="min-height:150px" placeholder="1- اخطار کیفی در خط مشتری به علت گلوله قلع...&#10;2- PPM داخلی و هزینه‌های کیفی...&#10;3- توقفات خط تولید..."></textarea>
+    <div class="note"><b>راهنمای تحقیق:</b> عیوب رایج در بردهای الکترونیکی خودرو: گلوله قلع، اتصال کوتاه/پل قلع، حفره، عدم قلع‌گیری (عدم پوشش کامل پد)، نفوذ قلع، قبرسنگی (Tombstoning)، جابجایی قطعه، خرابی تست ICT/عملکردی. در گام «تحقیق اینترنتی» جزئیات علل هر عیب را ببینید.</div>
+  </div>
+</section>
+
+<!-- ============ گام ۵: فاز ۲ ============ -->
+<section class="step" data-step="5">
+  <div class="card">
+    <h2>فاز ۲ — توجیه دلایل انتخاب (اخطارهای کیفی)</h2>
+    <div class="hint">اخطارهای کیفی مرتبط با این فرآیند را وارد کنید.</div>
+    <table class="grid" id="tblWarn"><thead><tr><th>تاریخ</th><th>شماره اخطار کیفی</th><th>ایراد</th><th>علت ایجاد ایراد</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblWarn">+ افزودن اخطار</button>
+    <label>جمع‌بندی (اختیاری — مثل «تعداد اخطار کیفی با عامل مسبب: ۵»)</label>
+    <input type="text" id="r_warn_summary">
+  </div>
+</section>
+
+<!-- ============ گام ۶: فاز ۳ ============ -->
+<section class="step" data-step="6">
+  <div class="card">
+    <h2>فاز ۳ — درک وضعیت جاری</h2>
+    <div class="hint">وضعیت سازنده، مقایسه قبل/بعد، قابلیت فرآیند، هزینه‌ها، روند PPM و مقایسه تامین‌کننده‌ها.</div>
+
+    <label>وضعیت سازنده (هر ردیف: شرح | وضعیت)</label>
+    <table class="grid" id="tblSupplier"><thead><tr><th>شرح</th><th>وضعیت</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblSupplier">+ افزودن ردیف</button>
+
+    <label>مقایسه ایرادات — انواع عیب (هر خط یک نوع)</label>
+    <textarea id="r_comp_types" placeholder="اتصال کوتاه&#10;حفره&#10;گلوله قلع"></textarea>
+    <div class="row">
+      <div><label>برچسب «قبل»</label><input type="text" id="r_before_label" placeholder="وان قدیمی"></div>
+      <div><label>برچسب «بعد»</label><input type="text" id="r_after_label" placeholder="وان جدید"></div>
+    </div>
+    <table class="grid" id="tblCompare"><thead><tr><th>نوع ایراد</th><th>قبل</th><th>بعد</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblCompare">+ افزودن نوع عیب</button>
+    <div class="row">
+      <div><label>جمع ایرادات قبل</label><input type="text" id="r_before_total"></div>
+      <div><label>جمع ایرادات بعد</label><input type="text" id="r_after_total"></div>
+      <div><label>PPM قبل</label><input type="text" id="r_before_ppm"></div>
+      <div><label>PPM بعد</label><input type="text" id="r_after_ppm"></div>
+    </div>
+
+    <label>قابلیت فرآیند (هر ردیف: وضعیت | تاریخ | شاخص توانمندی)</label>
+    <table class="grid" id="tblCap"><thead><tr><th>وضعیت</th><th>تاریخ</th><th>شاخص توانمندی</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblCap">+ افزودن ردیف</button>
+
+    <label>هزینه‌ها — قبل (هر ردیف: هزینه | نحوه محاسبه | فرآیند | ایستگاه)</label>
+    <table class="grid" id="tblCostB"><thead><tr><th>هزینه</th><th>نحوه محاسبه</th><th>فرآیند</th><th>ایستگاه</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblCostB">+ افزودن ردیف</button>
+    <input type="text" id="r_costb_summary" placeholder="جمع‌بندی هزینه قبل (اختیاری)" style="margin-top:6px">
+
+    <label>هزینه‌ها — بعد</label>
+    <table class="grid" id="tblCostA"><thead><tr><th>هزینه</th><th>نحوه محاسبه</th><th>فرآیند</th><th>ایستگاه</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblCostA">+ افزودن ردیف</button>
+    <input type="text" id="r_costa_summary" placeholder="جمع‌بندی هزینه بعد (اختیاری)" style="margin-top:6px">
+
+    <label>روند PPM (هر ردیف: تاریخ | تعداد پایش‌شده | جمع ایرادات | PPM)</label>
+    <table class="grid" id="tblPpm"><thead><tr><th>تاریخ</th><th>تعداد پایش‌شده</th><th>جمع ایرادات</th><th>PPM</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblPpm">+ افزودن ردیف</button>
+    <div class="row">
+      <div><label>هدف PPM (اختیاری)</label><input type="text" id="r_ppm_target" placeholder="300000"></div>
+      <div><label>حد قابل قبول PPM (اختیاری)</label><input type="text" id="r_ppm_limit" placeholder="600000"></div>
+    </div>
+
+    <label>مقایسه تامین‌کننده‌ها / طراحی‌ها (هر ردیف: محصول | تعداد پایش‌شده | جمع ایراد | PPM)</label>
+    <table class="grid" id="tblSupCmp"><thead><tr><th>محصول</th><th>تعداد پایش‌شده</th><th>جمع ایراد</th><th>PPM</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblSupCmp">+ افزودن ردیف</button>
+
+    <label>عکس‌های نمونه عیوب (چندتایی)</label>
+    <input type="file" id="ph_defects" accept="image/*" multiple>
+    <div class="photo-grid" id="prev_defects"></div>
+  </div>
+</section>
+
+<!-- ============ گام ۷: فاز ۴ ============ -->
+<section class="step" data-step="7">
+  <div class="card">
+    <h2>فاز ۴ — انتخاب هدف</h2>
+    <label>اهداف کمی (هر خط یک هدف)</label>
+    <textarea id="r_goals" placeholder="کاهش 60% هزینه‌های فرآیندی...&#10;کاهش 80% تعداد اخطارهای کیفی...&#10;کاهش 80% PPM..."></textarea>
+    <label>گام‌های اصلی رفع ایراد (هر خط یک گام)</label>
+    <textarea id="r_goal_steps" placeholder="1- تشکیل تیم 8D...&#10;2- بررسی قطعات برگشتی..."></textarea>
+  </div>
+</section>
+
+<!-- ============ گام ۸: فاز ۵ ============ -->
+<section class="step" data-step="8">
+  <div class="card">
+    <h2>فاز ۵ — تجزیه و تحلیل</h2>
+    <div class="hint">پارتو عیوب، نمودار ایشیکاوا (6M) و جدول بررسی علل.</div>
+
+    <label>پارتو عیوب (هر ردیف: نوع عیب | تعداد | درصد تجمعی)</label>
+    <table class="grid" id="tblPareto"><thead><tr><th>نوع عیب</th><th>تعداد</th><th>درصد تجمعی</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblPareto">+ افزودن ردیف</button>
+
+    <label>شرح ایراد (سربرگ نمودار ایشیکاوا)</label>
+    <input type="text" id="r_problem" placeholder="مثال: PPM بالای خرابی‌های اتصالی، گلوله قلع و کمبود قلع">
+    <label>علل ایشیکاوا — هر دسته، هر خط یک علت</label>
+    <div class="row">
+      <div><label>نیروی انسانی</label><textarea id="f_man"></textarea></div>
+      <div><label>محیط</label><textarea id="f_env"></textarea></div>
+      <div><label>اندازه‌گیری</label><textarea id="f_meas"></textarea></div>
+    </div>
+    <div class="row">
+      <div><label>تجهیزات</label><textarea id="f_mach"></textarea></div>
+      <div><label>مواد</label><textarea id="f_mat"></textarea></div>
+      <div><label>روش</label><textarea id="f_meth"></textarea></div>
+    </div>
+
+    <label>بررسی علل (هر ردیف: عامل | شرح بررسی | نتیجه: تاثیرگذار / تاثیرگذار نمی‌باشد / نامشخص)</label>
+    <table class="grid" id="tblCauses"><thead><tr><th>عامل اعلام‌شده</th><th>شرح بررسی انجام‌شده</th><th>نتیجه</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblCauses">+ افزودن ردیف</button>
+
+    <label>عکس‌های تحلیل (اختیاری)</label>
+    <input type="file" id="ph_analysis" accept="image/*" multiple>
+    <div class="photo-grid" id="prev_analysis"></div>
+  </div>
+</section>
+
+<!-- ============ گام ۹: فاز ۶ ============ -->
+<section class="step" data-step="9">
+  <div class="card">
+    <h2>فاز ۶ — اجرای اقدام اصلاحی</h2>
+    <label>اقدامات تعریف‌شده قبلی (اقدام | مسئول | تاریخ | وضعیت | اثربخشی)</label>
+    <table class="grid" id="tblPrev"><thead><tr><th>اقدام</th><th>مسئول</th><th>تاریخ</th><th>وضعیت</th><th>اثربخشی</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblPrev">+ افزودن ردیف</button>
+
+    <label>اقدامات تعریف‌شده جدید (اقدام | مسئول | تاریخ | وضعیت)</label>
+    <table class="grid" id="tblNew"><thead><tr><th>اقدام</th><th>مسئول</th><th>تاریخ</th><th>وضعیت</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblNew">+ افزودن ردیف</button>
+
+    <label>کارت‌های اقدام با عکس قبل/بعد</label>
+    <div id="cardsWrap"></div>
+    <button class="btn small secondary" id="btnAddCard">+ افزودن کارت اقدام</button>
+  </div>
+</section>
+
+<!-- ============ گام ۱۰: فاز ۷ ============ -->
+<section class="step" data-step="10">
+  <div class="card">
+    <h2>فاز ۷ — تایید تاثیرات</h2>
+    <label>متن تایید تاثیرات</label>
+    <textarea id="r_eff_text"></textarea>
+    <label>داده‌های PPM پس از اصلاح (هر ردیف: تاریخ | PPM)</label>
+    <table class="grid" id="tblEff"><thead><tr><th>تاریخ</th><th>PPM</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblEff">+ افزودن ردیف</button>
+    <label>هدف PPM (اختیاری)</label>
+    <input type="text" id="r_eff_target">
+  </div>
+</section>
+
+<!-- ============ گام ۱۱: فاز ۸ ============ -->
+<section class="step" data-step="11">
+  <div class="card">
+    <h2>فاز ۸ — استانداردسازی</h2>
+    <label>بازنگری سیستم‌ها / مدارک موثر (مدرک | مسئول | شروع | پایان)</label>
+    <table class="grid" id="tblStd"><thead><tr><th>مدرک</th><th>مسئول</th><th>شروع</th><th>پایان</th><th></th></tr></thead><tbody></tbody></table>
+    <button class="btn small secondary" data-addrow="tblStd">+ افزودن ردیف</button>
+  </div>
+</section>
+
+<!-- ============ گام ۱۲: فاز ۹ ============ -->
+<section class="step" data-step="12">
+  <div class="card">
+    <h2>فاز ۹ — خلاصه‌سازی و برنامه‌ریزی اقدامات آینده</h2>
+    <label>خلاصه اقدامات انجام‌شده</label>
+    <textarea id="r_summary" style="min-height:130px"></textarea>
+    <label>اقدامات ثانویه / آینده</label>
+    <textarea id="r_future" style="min-height:130px" placeholder="مثال: استفاده از DOE برای بهینه‌سازی... اجرای الزامات برای سایر محصولات... بررسی فناوری PIP..."></textarea>
+  </div>
+</section>
+
+<!-- ============ گام ۱۳: تحقیق ============ -->
+<section class="step" data-step="13">
+  <div class="card">
+    <h2>تحقیق اینترنتی و بهینه‌کاوی</h2>
+    <div class="hint">کلمه کلیدی را وارد کنید تا در اینترنت جستجو شود و همچنین از پایگاه دانش داخلی (یافته‌های تحقیق تخصصی) استفاده کنید. خلاصه یافته‌ها و منابع در اسلاید «تحقیق و بهینه‌کاوی» قرار می‌گیرد.</div>
+    <div class="row">
+      <div><label>کلمه کلیدی جستجو</label><input type="text" id="res_query" placeholder="مثال: نام فرآیند + نوع عیب + استاندارد (مثلاً: SMT tombstoning causes IPC-A-610)"></div>
+      <div style="align-self:end"><button class="btn" id="btnSearch">جستجو در اینترنت</button></div>
+    </div>
+    <div id="resResults" style="margin-top:10px"></div>
+    <label>جستجو در پایگاه دانش داخلی</label>
+    <input type="text" id="kb_query" placeholder="مثال: گلوله قلع، قبرسنگی، ایشیکاوا، 8D، قابلیت فرآیند، ICT...">
+    <div id="kbResults" style="margin-top:10px"></div>
+    <label>خلاصه یافته‌های تحقیق (در خروجی قرار می‌گیرد)</label>
+    <textarea id="r_res_findings" style="min-height:120px"></textarea>
+    <label>منابع (هر خط یک منبع — عنوان + لینک)</label>
+    <textarea id="r_res_sources"></textarea>
+  </div>
+</section>
+
+<!-- ============ گام ۱۴: خروجی ============ -->
+<section class="step" data-step="14">
+  <div class="card">
+    <h2>پیش‌نمایش و خروجی</h2>
+    <div class="hint">فایل پاورپوینت با متن‌ها، جدول‌ها و نمودارهای <b>قابل ویرایش</b> (Native) تولید می‌شود — دقیقاً با ساختار فایل نمونه. عکس‌ها هم در جای خود قرار می‌گیرند و قابل جابه‌جایی/جایگزینی هستند.</div>
+    <div id="summaryBox"></div>
+    <label style="font-weight:normal;display:flex;align-items:center;gap:8px;margin:14px 0">
+      <input type="checkbox" id="chkOnlyFilled" style="width:auto">
+      فقط بخش‌های پرشده را در خروجی بیاور (در غیر این صورت همه اسلایدها با جای‌خالی ساخته می‌شوند تا گزارش کامل باشد)
+    </label>
+    <button class="btn" id="btnGenerate" style="font-size:16px;padding:14px 30px">تولید و دانلود فایل PPTX</button>
+    <div id="genMsg" style="margin-top:10px"></div>
+    <div class="note">نکته: اگر فایل دانلود نشد، مطمئن شوید سرور در حال اجراست. فایل خروجی در پوشه <b>output</b> سرور هم ذخیره می‌شود.</div>
+  </div>
+</section>
+
+<div class="navbtns">
+  <button class="btn secondary" id="btnPrev">← قبلی</button>
+  <button class="btn" id="btnNext">بعدی →</button>
+</div>
+
+</main>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
